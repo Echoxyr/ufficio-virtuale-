@@ -1,54 +1,34 @@
-name: Build and Deploy
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: web/package-lock.json
-
-    - name: Install dependencies
-      working-directory: ./web
-      run: npm ci
-
-    - name: Build
-      working-directory: ./web
-      run: npm run build
+        cache-dependency-path: package.json
+    
+    - run: npm ci
+    - run: npm run build
       env:
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-
-    - name: Deploy to Static Hosting
-      uses: actions/upload-artifact@v4
+    
+    - uses: actions/upload-pages-artifact@v3
       with:
-        name: build-files
-        path: web/dist/
-        
-    # Generic deployment step - configure based on your chosen hosting provider
-    # Example for any hosting service that accepts build artifacts:
-    - name: Deploy to Hosting
-      run: |
-        # Replace this section with your hosting provider's deployment commands
-        # Example variables to set in GitHub Secrets:
-        # HOSTING_TOKEN: your-hosting-token
-        # HOSTING_PROJECT: your-project-id
-        echo "Deploy to hosting with token: ${{ secrets.HOSTING_TOKEN }}"
-        echo "Project: ${{ secrets.HOSTING_PROJECT }}"
-        echo "Build files ready in web/dist/"
-      env:
-        HOSTING_TOKEN: ${{ secrets.HOSTING_TOKEN }}
-        HOSTING_PROJECT: ${{ secrets.HOSTING_PROJECT }}
+        path: dist
+    
+    - uses: actions/deploy-pages@v4
